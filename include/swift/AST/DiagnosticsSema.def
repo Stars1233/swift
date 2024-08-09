@@ -942,6 +942,10 @@ ERROR(need_cxx_interop_to_import_module,none,
 NOTE(enable_cxx_interop_docs,none,
      "visit https://www.swift.org/documentation/cxx-interop/project-build-setup to learn how to enable C++ interoperability", ())
 
+ERROR(cxx_stdlib_kind_mismatch,none,
+      "module %0 was built with %1, but current compilation uses %2",
+      (Identifier, StringRef, StringRef))
+
 ERROR(modularization_issue_decl_moved,Fatal,
       "reference to %select{top-level declaration|type}0 %1 broken by a context change; "
       "%1 was expected to be in %2, but now a candidate is found only in %3",
@@ -2944,9 +2948,8 @@ NOTE(inherited_protocol_does_not_conform,none,
      "type %0 does not conform to inherited protocol %1", (Type, Type))
 NOTE(no_witnesses,none,
      "protocol requires "
-     "%select{initializer %1|function %1|property %1|subscript}0 with type %2"
-     "%select{|; add a stub for conformance}3",
-     (RequirementKind, const ValueDecl *, WitnessType, bool))
+     "%select{initializer %1|function %1|property %1|subscript}0 with type %2",
+     (RequirementKind, const ValueDecl *, WitnessType))
 NOTE(missing_witnesses_general,none, "add stubs for conformance",
      ())
 NOTE(ambiguous_witnesses,none,
@@ -2960,11 +2963,10 @@ NOTE(ambiguous_witnesses_wrong_name,none,
      "subscript operators}0 with type %2",
      (RequirementKind, const ValueDecl *, WitnessType))
 NOTE(no_witnesses_type,none,
-     "protocol requires nested type %0; add nested type %0 for conformance",
+     "protocol requires nested type %0",
      (const AssociatedTypeDecl *))
 NOTE(no_witnesses_type_tuple,none,
-     "protocol requires nested type %0; add type alias %0 with underlying type %1 "
-     "for conformance",
+     "protocol requires nested type %0",
      (const AssociatedTypeDecl *, Type))
 NOTE(default_associated_type_unsatisfied_conformance,none,
      "default type %0 for associated type %1 (from protocol %2) "
@@ -4607,6 +4609,8 @@ ERROR(cannot_explicitly_specialize_generic_function,none,
       "cannot explicitly specialize a generic function", ())
 ERROR(not_a_generic_type,none,
       "cannot specialize non-generic type %0", (Type))
+ERROR(not_a_generic_macro,none,
+      "cannot specialize a non-generic external macro %0", (const ValueDecl *))
 ERROR(protocol_declares_unknown_primary_assoc_type,none,
       "an associated type named %0 must be declared in the protocol %1 or a protocol it inherits",
       (Identifier, Type))
@@ -5518,9 +5522,6 @@ ERROR(non_sendable_isolated_capture,none,
       "capture of %1 with non-sendable type %0 in an isolated "
       "%select{local function|closure}2",
       (Type, DeclName, bool))
-ERROR(implicit_async_let_non_sendable_capture,none,
-      "capture of %1 with non-sendable type %0 in 'async let' binding",
-      (Type, DeclName))
 ERROR(self_capture_deinit_task,none,
       "capture of 'self' in a closure that outlives deinit",
       ())
@@ -5536,6 +5537,10 @@ NOTE(actor_isolated_sync_func_value,none,
      "calls function of type %0 from outside of its actor context are "
      "implicitly asynchronous",
      (Type))
+NOTE(actor_isolation_source,none,
+     "%noun0 inferred from %1",
+     (ActorIsolation, IsolationSource))
+
 NOTE(note_distributed_actor_isolated_method,none,
      "distributed actor-isolated %kind0 declared here",
      (const ValueDecl *))
@@ -5632,40 +5637,73 @@ NOTE(in_derived_conformance, none,
 NOTE(in_derived_witness, none,
      "in %0 %1 for derived conformance to %2",
      (DescriptiveDeclKind, DeclName, Type))
-ERROR(non_sendable_param_type,none,
-      "non-sendable type %0 %select{passed in call to %3 %kind2|"
-      "exiting %3 context in call to nonisolated %kind2|"
-      "passed in implicitly asynchronous call to %3 %kind2|"
-      "in parameter of the protocol requirement satisfied by %3 %kind2|"
-      "in parameter of superclass method overridden by %3 %kind2|"
-      "in parameter of %3 '@objc' %kind2}1 cannot cross actor boundary",
-      (Type, unsigned, const ValueDecl *, ActorIsolation))
-ERROR(non_sendable_call_argument,none,
-      "passing argument of non-sendable type %0 %select{into %2 context|"
-      "outside of %2 context}1 may introduce data races",
-      (Type, bool, ActorIsolation))
-ERROR(non_sendable_result_type,none,
-      "non-sendable type %0 returned by %select{call to %3 %kind2|"
-      "call from %4 context to nonisolated %kind2|"
-      "implicitly asynchronous call to %3 %kind2|"
-      "%3 %kind2 satisfying protocol requirement|"
-      "%3 overriding %kind2|"
-      "%3 '@objc' %kind2}1 cannot cross actor boundary",
-      (Type, unsigned, const ValueDecl *, ActorIsolation))
+
+ERROR(non_sendable_arg_into_actor,none,
+      "non-sendable type %0 cannot be sent into %2 context in call to %kind1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_arg_exits_actor,none,
+      "non-sendable type %0 cannot exit %2 context in call to nonisolated "
+      "%kind1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_param_in_witness,none,
+      "non-sendable parameter type %0 cannot be sent from caller of "
+      "protocol requirement %1 into %2 implementation",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_param_in_override,none,
+      "non-sendable parameter type %0 cannot be sent from caller of "
+      "superclass %kind1 into %2 override",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_param_in_objc,none,
+      "non-sendable parameter type %0 of %2 '@objc' %kind1 cannot cross actor "
+      "boundary",
+      (Type, const ValueDecl *, ActorIsolation))
+
+ERROR(non_sendable_result_into_actor,none,
+      "non-sendable result type %0 cannot be sent from %2 context in call "
+      "to %kind1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_result_exits_actor,none,
+      "non-sendable result type %0 cannot exit %2 context in call to "
+      "nonisolated %kind1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_result_in_witness,none,
+      "non-sendable type %0 cannot be returned from %2 implementation "
+      "to caller of protocol requirement %1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_result_in_override,none,
+      "non-sendable type %0 cannot be returned from %2 override to "
+      "caller of superclass %kind1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_result_in_objc,none,
+      "non-sendable type %0 returned by %2 '@objc' %kind1 cannot cross "
+      "actor boundary",
+      (Type, const ValueDecl *, ActorIsolation))
+
 ERROR(non_sendable_call_result_type,none,
-      "non-sendable type %0 returned by %select{implicitly asynchronous |}1"
-      "call to %2 function cannot cross actor boundary",
-      (Type, bool, ActorIsolation))
-ERROR(non_sendable_property_type,none,
-      "non-sendable type %0 in %select{"
-      "%select{asynchronous access to %4 %kind1|"
-      "asynchronous access from %4 context to nonisolated %kind1|"
-      "implicitly asynchronous access to %4 %kind1|"
-      "conformance of %4 %kind1 to protocol requirement|"
-      "%4 overriding %kind1|"
-      "%4 '@objc' %kind1}3|captured local %1}2 cannot "
-      "cross %select{actor|task}2 boundary",
-      (Type, const ValueDecl *, bool, unsigned, ActorIsolation))
+      "non-sendable result type %0 cannot be sent from %1 context in call "
+      "to async function",
+      (Type, ActorIsolation))
+
+ERROR(non_sendable_property_exits_actor,none,
+      "non-sendable type %0 of %kind1 cannot exit %2 context",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_property_into_actor,none,
+      "non-sendable type %0 of nonisolated %kind1 cannot be sent to "
+      "%2 context",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_property_in_witness,none,
+      "non-sendable type %0 cannot be returned from %2 implementation "
+      "to caller of protocol requirement %1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_property_in_override,none,
+      "non-sendable type %0 cannot be returned from %2 override to "
+      "caller of superclass %kind1",
+      (Type, const ValueDecl *, ActorIsolation))
+ERROR(non_sendable_property_in_objc,none,
+      "non-sendable type %0 returned by %2 '@objc' %kind1 cannot cross "
+      "actor boundary",
+      (Type, const ValueDecl *, ActorIsolation))
+
 ERROR(non_sendable_keypath_capture,none,
       "cannot form key path that captures non-sendable type %0",
       (Type))
@@ -5743,6 +5781,10 @@ WARNING(nonisolated_unsafe_sendable_actor_constant,none,
      "'nonisolated(unsafe)' is unnecessary for a constant actor-isolated "
      "property with 'Sendable' type %0, consider removing it",
      (Type))
+WARNING(nonisolated_unsafe_uneffective_on_funcs,none,
+     "'nonisolated(unsafe)' has no effect on %0 %1, "
+     "consider using 'nonisolated'",
+     (DescriptiveDeclKind, const ValueDecl*))
 ERROR(nonisolated_non_sendable,none,
       "'nonisolated' can not be applied to variable with non-'Sendable' "
       "type %0",

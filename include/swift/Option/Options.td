@@ -992,6 +992,14 @@ def Xlinker : Separate<["-"], "Xlinker">,
   Flags<[DoesNotAffectIncrementalBuild]>,
   HelpText<"Specifies an option which should be passed to the linker">;
 
+def build_id : JoinedOrSeparate<["-"], "build-id">,
+  Flags<[NewDriverOnlyOption]>,
+  HelpText<"Specify the build ID argument passed to the linker">,
+  MetaVarName<"<build-id>">;
+def build_id_EQ : Joined<["-"], "build-id=">,
+  Flags<[NewDriverOnlyOption]>,
+  Alias<build_id>;
+
 // Optimization levels
 
 def O_Group : OptionGroup<"<optimization level options>">;
@@ -1390,7 +1398,11 @@ def disable_clang_target : Flag<["-"], "disable-clang-target">,
 
 def explain_module_dependency : Separate<["-"], "explain-module-dependency">,
   Flags<[NewDriverOnlyOption]>,
-  HelpText<"Emit remark/notes describing why compilation may depend on a module with a given name.">;
+  HelpText<"Emit remark describing why compilation may depend on a module with a given name.">;
+
+def explain_module_dependency_detailed : Separate<["-"], "explain-module-dependency-detailed">,
+  Flags<[NewDriverOnlyOption]>,
+  HelpText<"Emit remarks describing every possible dependency path that explains why compilation may depend on a module with a given name.">;
 
 def explicit_auto_linking : Flag<["-"], "explicit-auto-linking">,
   Flags<[NewDriverOnlyOption]>,

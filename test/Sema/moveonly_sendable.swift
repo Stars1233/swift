@@ -48,7 +48,7 @@ func processFiles(_ a: A, _ anotherFile: borrowing FileDescriptor) async {
   await a.takeMaybeFile(.available(anotherFile))
   _ = A(.available(anotherFile))
 
-  let ns = await a.getRef() // expected-warning {{non-sendable type 'NotSendableMO' returned by call to actor-isolated function cannot cross actor boundary}}
+  let ns = await a.getRef() // expected-warning {{non-sendable result type 'NotSendableMO' cannot be sent from actor-isolated context in call to instance method 'getRef()'}}
   await takeNotSendable(ns) // expected-complete-warning {{passing argument of non-sendable type 'NotSendableMO' outside of main actor-isolated context may introduce data races}}
 
   switch (await a.giveFileDescriptor()) {
@@ -125,12 +125,14 @@ func tryToCastIt(_ fd: borrowing FileDescriptor) {
 }
 
 protocol GiveSendable<T> {
-  associatedtype T: Sendable // expected-note {{protocol requires nested type 'T'; add nested type 'T' for conformance}}
+  associatedtype T: Sendable // expected-note {{protocol requires nested type 'T'}}
   func give() -> T
 }
 
 // make sure witnessing associatedtypes is still prevented, even though we meet the explicit constraint.
-class Bad: GiveSendable { // expected-error {{type 'Bad' does not conform to protocol 'GiveSendable'}}
+class Bad: GiveSendable { 
+  // expected-error@-1 {{type 'Bad' does not conform to protocol 'GiveSendable'}} 
+  // expected-note@-2 {{add stubs for conformance}}
   typealias T = FileDescriptor // expected-note {{possibly intended match 'Bad.T' (aka 'FileDescriptor') does not conform to 'Copyable'}}
   func give() -> FileDescriptor { return FileDescriptor(id: -1) }
 }

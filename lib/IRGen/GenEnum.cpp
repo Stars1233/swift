@@ -104,6 +104,7 @@
 #include "GenEnum.h"
 
 #include "swift/AST/Types.h"
+#include "swift/AST/ConformanceLookup.h"
 #include "swift/AST/Decl.h"
 #include "swift/AST/Expr.h"
 #include "swift/AST/IRGenOptions.h"
@@ -1699,7 +1700,7 @@ namespace {
             projectedBits = IGF.Builder.CreateElementBitCast(projectedBits, IGM.Int8Ty);
           }
           extraTag = IGF.Builder.CreateLoad(projectedBits);
-          auto maskBits = llvm::PowerOf2Ceil(NumExtraTagValues) - 1;
+          auto maskBits = (1 << ExtraTagBitCount) - 1;
           auto mask = llvm::ConstantInt::get(extraTag->getType(), maskBits);
           extraTag = IGF.Builder.CreateAnd(extraTag, mask);
         } else {
@@ -7324,8 +7325,7 @@ ResilientEnumImplStrategy::completeEnumTypeLayout(TypeConverter &TC,
       IGM.getSwiftModule()->getASTContext().getProtocol(
           KnownProtocolKind::BitwiseCopyable);
   if (bitwiseCopyableProtocol &&
-      ModuleDecl::checkConformance(Type.getASTType(),
-                                   bitwiseCopyableProtocol)) {
+      checkConformance(Type.getASTType(), bitwiseCopyableProtocol)) {
     return BitwiseCopyableTypeInfo::create(enumTy, abiAccessible);
   }
   return registerEnumTypeInfo(

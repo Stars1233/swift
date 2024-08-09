@@ -231,6 +231,7 @@ EXPERIMENTAL_FEATURE(CodeItemMacros, false)
 EXPERIMENTAL_FEATURE(PreambleMacros, false)
 EXPERIMENTAL_FEATURE(TupleConformances, false)
 EXPERIMENTAL_FEATURE(FullTypedThrows, false)
+EXPERIMENTAL_FEATURE(SameElementRequirements, false)
 
 // Whether to enable @_used and @_section attributes
 EXPERIMENTAL_FEATURE(SymbolLinkageMarkers, true)
@@ -247,6 +248,7 @@ EXPERIMENTAL_FEATURE(OldOwnershipOperatorSpellings, true)
 EXPERIMENTAL_FEATURE(MoveOnlyEnumDeinits, true)
 EXPERIMENTAL_FEATURE(MoveOnlyTuples, true)
 EXPERIMENTAL_FEATURE(MoveOnlyPartialReinitialization, true)
+EXPERIMENTAL_FEATURE(ConsumeSelfInDeinit, true)
 
 EXPERIMENTAL_FEATURE(OneWayClosureParameters, false)
 EXPERIMENTAL_FEATURE(LayoutPrespecialization, true)
@@ -392,9 +394,12 @@ EXPERIMENTAL_FEATURE(DebugDescriptionMacro, true)
 
 EXPERIMENTAL_FEATURE(ReinitializeConsumeInMultiBlockDefer, false)
 
-EXPERIMENTAL_FEATURE(SE427NoInferenceOnExtension, false)
+EXPERIMENTAL_FEATURE(SE427NoInferenceOnExtension, true)
 
 EXPERIMENTAL_FEATURE(Extern, true)
+
+// Enable trailing comma for comma-separated lists.
+EXPERIMENTAL_FEATURE(TrailingComma, false)
 
 #undef EXPERIMENTAL_FEATURE_EXCLUDED_FROM_MODULE_INTERFACE
 #undef EXPERIMENTAL_FEATURE

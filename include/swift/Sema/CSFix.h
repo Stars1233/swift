@@ -3721,11 +3721,14 @@ public:
 
 class AllowConcreteTypeSpecialization final : public ConstraintFix {
   Type ConcreteType;
+  ValueDecl *Decl;
 
   AllowConcreteTypeSpecialization(ConstraintSystem &cs, Type concreteTy,
-                                  ConstraintLocator *locator)
-      : ConstraintFix(cs, FixKind::AllowConcreteTypeSpecialization, locator),
-        ConcreteType(concreteTy) {}
+                                  ValueDecl *decl, ConstraintLocator *locator,
+                                  FixBehavior fixBehavior)
+      : ConstraintFix(cs, FixKind::AllowConcreteTypeSpecialization, locator,
+                      fixBehavior),
+        ConcreteType(concreteTy), Decl(decl) {}
 
 public:
   std::string getName() const override {
@@ -3739,7 +3742,8 @@ public:
   }
 
   static AllowConcreteTypeSpecialization *
-  create(ConstraintSystem &cs, Type concreteTy, ConstraintLocator *locator);
+  create(ConstraintSystem &cs, Type concreteTy, ValueDecl *decl,
+         ConstraintLocator *locator, FixBehavior fixBehavior);
 
   static bool classof(const ConstraintFix *fix) {
     return fix->getKind() == FixKind::AllowConcreteTypeSpecialization;
@@ -3751,7 +3755,7 @@ class AllowGenericFunctionSpecialization final : public ConstraintFix {
 
   AllowGenericFunctionSpecialization(ConstraintSystem &cs, ValueDecl *decl,
                                      ConstraintLocator *locator)
-      : ConstraintFix(cs, FixKind::AllowConcreteTypeSpecialization, locator),
+      : ConstraintFix(cs, FixKind::AllowGenericFunctionSpecialization, locator),
         Decl(decl) {}
 
 public:

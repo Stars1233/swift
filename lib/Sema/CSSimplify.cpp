@@ -19,6 +19,7 @@
 #include "TypeCheckConcurrency.h"
 #include "TypeCheckEffects.h"
 #include "swift/AST/ASTPrinter.h"
+#include "swift/AST/ConformanceLookup.h"
 #include "swift/AST/Decl.h"
 #include "swift/AST/ExistentialLayout.h"
 #include "swift/AST/GenericEnvironment.h"
@@ -1589,10 +1590,9 @@ shouldOpenExistentialCallArgument(ValueDecl *callee, unsigned paramIdx,
       existentialObjectType = existentialMetaTy->getInstanceType();
     else
       existentialObjectType = argTy;
-    auto module = cs.DC->getParentModule();
     bool containsNonSelfConformance = false;
     for (auto proto : genericSig->getRequiredProtocols(genericParam)) {
-      auto conformance = module->lookupExistentialConformance(
+      auto conformance = lookupExistentialConformance(
           existentialObjectType, proto);
       if (conformance.isInvalid()) {
         containsNonSelfConformance = true;
@@ -10290,8 +10290,7 @@ performMemberLookup(ConstraintKind constraintKind, DeclNameRef memberName,
 
     if (shouldCheckSendabilityOfBase()) {
       auto sendableProtocol = Context.getProtocol(KnownProtocolKind::Sendable);
-      auto baseConformance = ModuleDecl::lookupConformance(
-          instanceTy, sendableProtocol);
+      auto baseConformance = lookupConformance(instanceTy, sendableProtocol);
 
       if (llvm::any_of(
               baseConformance.getConditionalRequirements(),
@@ -11835,10 +11834,19 @@ bool ConstraintSystem::resolveClosure(TypeVariableType *typeVar,
         if (contextualParam->isIsolated() && !flags.isIsolated() && paramDecl)
           isolatedParams.insert(paramDecl);
 
+        // Carry-over the ownership specifier from the contextual parameter.
+        auto paramOwnership =
+            contextualParam->getParameterFlags().getOwnershipSpecifier();
+
+        // `sending` is already carried over; skip this related ownership kind.
+        if (paramOwnership == ParamSpecifier::ImplicitlyCopyableConsuming)
+          paramOwnership = flags.getOwnershipSpecifier();
+
         param = param.withFlags(flags.withInOut(contextualParam->isInOut())
                                     .withVariadic(contextualParam->isVariadic())
                                     .withIsolated(contextualParam->isIsolated())
-                                    .withSending(contextualParam->isSending()));
+                                    .withSending(contextualParam->isSending())
+                                    .withOwnershipSpecifier(paramOwnership));
       }
     }
 
@@ -13980,6 +13988,8 @@ ConstraintSystem::simplifyExplicitGenericArgumentsConstraint(
     decl = bound->getDecl();
     for (auto argType : bound->getDirectGenericArgs()) {
       auto *typeVar = argType->getAs<TypeVariableType>();
+      if (!typeVar)
+        return SolutionKind::Error;
       auto *genericParam = typeVar->getImpl().getGenericParameter();
       openedTypes.push_back({genericParam, typeVar});
     }
@@ -14046,8 +14056,11 @@ ConstraintSystem::simplifyExplicitGenericArgumentsConstraint(
 
   auto genericParams = getGenericParams(decl);
   if (!decl->getAsGenericContext() || !genericParams) {
+    // Allow concrete macros to have specializations with just a warning.
     return recordFix(AllowConcreteTypeSpecialization::create(
-               *this, type1, getConstraintLocator(locator)))
+               *this, type1, decl, getConstraintLocator(locator),
+               isa<MacroDecl>(decl) ? FixBehavior::DowngradeToWarning
+                                    : FixBehavior::Error))
                ? SolutionKind::Error
                : SolutionKind::Solved;
   }

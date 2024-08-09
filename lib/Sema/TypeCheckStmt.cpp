@@ -24,6 +24,7 @@
 #include "swift/AST/ASTScope.h"
 #include "swift/AST/ASTVisitor.h"
 #include "swift/AST/ASTWalker.h"
+#include "swift/AST/ConformanceLookup.h"
 #include "swift/AST/DiagnosticSuppression.h"
 #include "swift/AST/DiagnosticsSema.h"
 #include "swift/AST/Identifier.h"
@@ -507,7 +508,7 @@ static void tryDiagnoseUnnecessaryCastOverOptionSet(ASTContext &Ctx,
   auto optionSetType = dyn_cast_or_null<ProtocolDecl>(Ctx.getOptionSetDecl());
   if (!optionSetType)
     return;
-  if (!ModuleDecl::lookupConformance(ResultType, optionSetType))
+  if (!lookupConformance(ResultType, optionSetType))
     return;
 
   auto *CE = dyn_cast<CallExpr>(E);
@@ -3284,7 +3285,7 @@ FuncDecl *TypeChecker::getForEachIteratorNextFunction(
   if (!isAsync)
     return ctx.getIteratorNext();
 
-  // If AsyncIteratorProtocol.next(_:) isn't available at all,
+  // If AsyncIteratorProtocol.next(isolation:) isn't available at all,
   // we're stuck using AsyncIteratorProtocol.next().
   auto nextElement = ctx.getAsyncIteratorNextIsolated();
   if (!nextElement)
@@ -3295,11 +3296,11 @@ FuncDecl *TypeChecker::getForEachIteratorNextFunction(
   if (enclosingUnsafeInheritsExecutor(dc))
     return ctx.getAsyncIteratorNext();
 
-  // If availability checking is disabled, use next(_:).
+  // If availability checking is disabled, use next(isolation:).
   if (ctx.LangOpts.DisableAvailabilityChecking || loc.isInvalid())
     return nextElement;
 
-  // We can only call next(_:) if we are in an availability context
+  // We can only call next(isolation:) if we are in an availability context
   // that supports typed throws.
   auto availability = overApproximateAvailabilityAtLocation(loc, dc);
   if (availability.isContainedIn(ctx.getTypedThrowsAvailability()))

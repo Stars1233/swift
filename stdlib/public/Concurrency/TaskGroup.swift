@@ -67,7 +67,7 @@ import Swift
 @backDeployed(before: SwiftStdlib 6.0)
 @inlinable
 public func withTaskGroup<ChildTaskResult, GroupResult>(
-  of childTaskResultType: ChildTaskResult.Type,
+  of childTaskResultType: ChildTaskResult.Type = ChildTaskResult.self,
   returning returnType: GroupResult.Type = GroupResult.self,
   isolation: isolated (any Actor)? = #isolation,
   body: (inout TaskGroup<ChildTaskResult>) async -> GroupResult
@@ -202,7 +202,7 @@ public func _unsafeInheritExecutor_withTaskGroup<ChildTaskResult, GroupResult>(
 @backDeployed(before: SwiftStdlib 6.0)
 @inlinable
 public func withThrowingTaskGroup<ChildTaskResult, GroupResult>(
-  of childTaskResultType: ChildTaskResult.Type,
+  of childTaskResultType: ChildTaskResult.Type = ChildTaskResult.self,
   returning returnType: GroupResult.Type = GroupResult.self,
   isolation: isolated (any Actor)? = #isolation,
   body: (inout ThrowingTaskGroup<ChildTaskResult, Error>) async throws -> GroupResult
@@ -832,7 +832,7 @@ public struct ThrowingTaskGroup<ChildTaskResult: Sendable, Failure: Error> {
   /// Instead, the corresponding call to `ThrowingTaskGroup.next()` rethrows that error.
   ///
   /// - Parameters:
-  ///   - overridingPriority: The priority of the operation task.
+  ///   - priority: The priority of the operation task.
   ///     Omit this parameter or pass `.unspecified`
   ///     to set the child task's priority to the priority of the group.
   ///   - operation: The operation to execute as part of the task group.
@@ -863,7 +863,7 @@ public struct ThrowingTaskGroup<ChildTaskResult: Sendable, Failure: Error> {
   /// Instead, the corresponding call to `ThrowingTaskGroup.next()` rethrows that error.
   ///
   /// - Parameters:
-  ///   - overridingPriority: The priority of the operation task.
+  ///   - priority: The priority of the operation task.
   ///     Omit this parameter or pass `.unspecified`
   ///     to set the child task's priority to the priority of the group.
   ///   - operation: The operation to execute as part of the task group.
