@@ -261,6 +261,7 @@ split_embedded_sources(
 
     NORMAL AtomicInt.swift.gyb
   EMBEDDED FloatingPointParsing.swift.gyb
+  EMBEDDED FloatingPointToString.swift
   EMBEDDED FloatingPointTypes.swift.gyb
   EMBEDDED IntegerTypes.swift.gyb
   EMBEDDED LegacyInt128.swift.gyb
@@ -288,7 +289,7 @@ if(SWIFT_STDLIB_ENABLE_VECTOR_TYPES)
 endif()
 
 # Freestanding and Linux/Android builds both have failures to resolve.
-if(NOT BOOTSTRAPPING_MODE STREQUAL "OFF" AND NOT SWIFT_FREESTANDING_FLAVOR AND NOT SWIFT_HOST_VARIANT_SDK STREQUAL "LINUX" AND NOT SWIFT_HOST_VARIANT_SDK STREQUAL "ANDROID")
+if(NOT BOOTSTRAPPING_MODE STREQUAL "OFF" AND NOT SWIFT_FREESTANDING_FLAVOR AND NOT SWIFT_HOST_VARIANT_SDK STREQUAL "ANDROID")
   list(APPEND SWIFTLIB_SOURCES ObjectIdentifier+DebugDescription.swift)
 endif()
 
